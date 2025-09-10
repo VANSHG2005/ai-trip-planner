@@ -1,11 +1,22 @@
 import './App.css'
-import { Button } from './components/ui/button'
+import Hero from './components/custom/Hero'
+import {BrowserRouter as Router,Routes,Route} from 'react-router-dom'
+import CreateTrip from './create-trip/index.jsx'
+import Header from './components/custom/Header'
 
 function App() {
 
   return (
-    <div className="flex min-h-svh flex-col items-center justify-center">
-      <Button>Click me</Button>
+    <div>
+
+      <Router>
+        <Header />
+        <Routes>
+          <Route path='/' element = {<Hero />}/>
+          <Route path='/create-trip' element = {<CreateTrip />}/>
+        </Routes>
+      </Router>
+
     </div>
   )
 }
