@@ -4,14 +4,25 @@ import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { AI_PROMPT, SelectBudgetOptions, SelectTravelesList } from '@/constants/options';
 import { toast } from 'sonner';
-// Import the new AI function
-import { generateAiResponse } from '@/lib/gemini'; // Make sure the path is correct
+import { generateAiResponse } from '@/lib/gemini'; 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { FcGoogle } from "react-icons/fc";
+import { useGoogleLogin } from '@react-oauth/google';
+import axios from 'axios';
+
 
 function CreateTrip() {
   const [selectedDestination, setSelectedDestination] = useState(null);
-  // Initialize formData as an object, not an array
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
 
   const handlePlaceSelect = (place) => {
     setSelectedDestination(place);
@@ -29,8 +40,22 @@ function CreateTrip() {
     console.log(formData);
   },[formData])
 
+  const login = useGoogleLogin({
+    onSuccess:(codeResp) => GetUserInfo(codeResp),
+    onError:(error) => console.log(error)
 
-  const OnGenerateTrip = async () => { // Make the function async
+  })
+
+
+  const OnGenerateTrip = async () => {
+
+    const user = localStorage.getItem('user');
+
+    if (!user){
+      setOpenDialog(true);
+      return;
+    }
+
     if (!formData?.noOfDays || !formData?.location || !formData?.budget || !formData?.traveler){
       toast("Please Enter All the Details");
       return;
@@ -40,7 +65,7 @@ function CreateTrip() {
       return;
     }
 
-    setLoading(true); // Set loading state to true
+    setLoading(true); 
 
     const FINAL_PROMPT = AI_PROMPT
       .replace('{location}', formData?.location?.properties?.formatted)
@@ -52,17 +77,33 @@ function CreateTrip() {
     console.log("Sending prompt to AI:", FINAL_PROMPT);
 
     try {
-      const result = await generateAiResponse(FINAL_PROMPT); // Call the AI model and wait for the result
+      const result = await generateAiResponse(FINAL_PROMPT); 
       console.log("AI Response:", result);
-      // Now you can use the 'result' state to display it in your UI
-      // For example: setAiResult(result);
+      
     } catch (error) {
         toast("Something went wrong while generating your trip.");
         console.error(error);
     } finally {
-        setLoading(false); // Set loading state to false after completion or error
+        setLoading(false); 
     }
   } 
+
+  const GetUserInfo = (tokenInfo) => {
+    axios.get(`https://www.googleapis.com/oauth2/v1/userinfo?access_token=${tokenInfo?.access_token}`, {
+      headers: {
+        Authorization: `Bearer ${tokenInfo?.access_token}`,
+        Accept: 'Application/json'
+      }
+    }).then((resp) => {
+      console.log(resp);
+      localStorage.setItem('user', JSON.stringify(resp.data));
+      setOpenDialog(false);
+      OnGenerateTrip();
+    }).catch(error => {
+      console.error("Failed to fetch user info:", error);
+      toast("Failed to sign in. Please try again.");
+    });
+  }
 
   return (
     <div className='sm:px-10 md:px-32 lg:px-56 xl:px-72 px-5 mt-10'>
@@ -74,7 +115,6 @@ function CreateTrip() {
       </p>
 
       <div className='mt-20 flex flex-col gap-10'>
-        {/* ... your existing JSX for inputs ... */}
         
         <div>
           <h2 className='text-xl my-3 font-medium'>
@@ -145,6 +185,25 @@ function CreateTrip() {
           {loading ? 'Generating...' : 'Generate Trip'}
         </Button>
       </div>
+
+      <Dialog open = {openDialog} onOpenChange={setOpenDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogDescription>
+              <img src="/logo.svg" className='w-50'/>
+              <h2 className='font-bold text-lg mt-7'>Sign In with Google</h2>
+              <p>Sign In to the Website with google Authentication Securely.</p>
+
+              <Button 
+              onClick = {login}
+              className="w-full mt-5 flex gap-4 items=center">
+                <FcGoogle className='h-7 w-7' />
+                Sign In with Google
+              </Button>
+            </DialogDescription>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
