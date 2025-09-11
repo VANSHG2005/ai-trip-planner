@@ -2,24 +2,23 @@ import React, { useEffect, useState } from 'react';
 import AddressAutocomplete from '@/components/AddressAutocomplete'; 
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import { SelectBudgetOptions, SelectTravelesList } from '@/constants/options';
+import { AI_PROMPT, SelectBudgetOptions, SelectTravelesList } from '@/constants/options';
+import { toast } from 'sonner';
+// Import the new AI function
+import { generateAiResponse } from '@/lib/gemini'; // Make sure the path is correct
 
 function CreateTrip() {
   const [selectedDestination, setSelectedDestination] = useState(null);
-  const [formData, setFormData] = useState([]);
+  // Initialize formData as an object, not an array
+  const [formData, setFormData] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const handlePlaceSelect = (place) => {
-    // console.log("Destination selected in parent:", place);
     setSelectedDestination(place);
     handleInputChange('location',place)
   };
 
   const handleInputChange = (name,value) => {
-
-    // if (name == 'noOfDays' && value > 5){
-    //   console.log("Please Enter Trip Dates Less than 5")
-    // }
-
     setFormData({
       ...formData,
       [name] : value
@@ -31,14 +30,39 @@ function CreateTrip() {
   },[formData])
 
 
-  const OnGenerateTrip = () =>{
-    if(formData?.noOfDays>5){
-      alert("Please Enter Trip Dates Less than 5");
+  const OnGenerateTrip = async () => { // Make the function async
+    if (!formData?.noOfDays || !formData?.location || !formData?.budget || !formData?.traveler){
+      toast("Please Enter All the Details");
+      return;
+    }
+    if(formData?.noOfDays > 5){
+      toast("Please Enter Trip Dates Less than 5");
       return;
     }
 
-    console.log(formData)
-  }
+    setLoading(true); // Set loading state to true
+
+    const FINAL_PROMPT = AI_PROMPT
+      .replace('{location}', formData?.location?.properties?.formatted)
+      .replace('{totalDays}', formData?.noOfDays)
+      .replace('{traveler}', formData?.traveler)
+      .replace('{budget}', formData?.budget)
+      .replace('{totalDays}', formData?.noOfDays);
+
+    console.log("Sending prompt to AI:", FINAL_PROMPT);
+
+    try {
+      const result = await generateAiResponse(FINAL_PROMPT); // Call the AI model and wait for the result
+      console.log("AI Response:", result);
+      // Now you can use the 'result' state to display it in your UI
+      // For example: setAiResult(result);
+    } catch (error) {
+        toast("Something went wrong while generating your trip.");
+        console.error(error);
+    } finally {
+        setLoading(false); // Set loading state to false after completion or error
+    }
+  } 
 
   return (
     <div className='sm:px-10 md:px-32 lg:px-56 xl:px-72 px-5 mt-10'>
@@ -50,7 +74,8 @@ function CreateTrip() {
       </p>
 
       <div className='mt-20 flex flex-col gap-10'>
-
+        {/* ... your existing JSX for inputs ... */}
+        
         <div>
           <h2 className='text-xl my-3 font-medium'>
             What is your destination of choice?
@@ -113,12 +138,11 @@ function CreateTrip() {
             ))}
           </div>
         </div>
-
       </div>
       
       <div className='my-10 flex justify-end'>
-        <Button onClick = {OnGenerateTrip}>
-          Generate Trip
+        <Button onClick={OnGenerateTrip} disabled={loading}>
+          {loading ? 'Generating...' : 'Generate Trip'}
         </Button>
       </div>
 
