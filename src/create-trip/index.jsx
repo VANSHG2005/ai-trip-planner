@@ -15,12 +15,14 @@ import { FcGoogle } from "react-icons/fc";
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import {doc, setDoc} from "firebase/firestore"
 import { db, auth } from '@/service/firebaseConfig';
+import { useNavigate } from 'react-router-dom';
 
 function CreateTrip() {
   const [selectedDestination, setSelectedDestination] = useState(null);
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
+  const navigate = useNavigate();
 
   const handlePlaceSelect = (place) => {
     setSelectedDestination(place);
@@ -89,13 +91,13 @@ function CreateTrip() {
       .replace('{totalDays}', formData?.noOfDays)
       .replace('{traveler}', formData?.traveler)
       .replace('{budget}', formData?.budget)
-      .replace('{totalDays}', formData?.noOfDays);
+//       .replace('{totalDays}', formData?.noOfDays);
 
-    console.log("Sending prompt to AI:", FINAL_PROMPT);
+//     console.log("Sending prompt to AI:", FINAL_PROMPT);
 
     try {
       const result = await generateAiResponse(FINAL_PROMPT); 
-      console.log("AI Response:", result);
+//       console.log("AI Response:", result);
       await SaveAiTrip(result);
       
     } catch (error) {
@@ -106,10 +108,9 @@ function CreateTrip() {
     }
   } 
 
-  // ===== MODIFIED FUNCTION START =====
-  const SaveAiTrip = async(TripData) =>{
-    const user = JSON.parse(localStorage.getItem('user'));
-    const docId = Date.now().toString();
+  const SaveAiTrip = async(TripData) =>{
+    const user = JSON.parse(localStorage.getItem('user'));
+    const docId = Date.now().toString();
 
     // 1. Clean the AI response to remove the markdown code block wrapper
     const cleanedResponse = TripData.replace(/^```json\s*/, '').replace(/\s*```$/, '');
@@ -120,20 +121,21 @@ function CreateTrip() {
 
       // 3. Save the valid JSON to Firestore
       await setDoc(doc(db,"AITrips",docId),{
-        userSelection: formData,
-        tripData: parsedData,
-        userEmail: user?.email,
-        id: docId
-      });
+        userSelection: formData,
+        tripData: parsedData,
+        userEmail: user?.email,
+        id: docId
+      });
       toast("Your trip has been saved successfully!");
+      navigate('/view-trip/'+docId)
+
     } catch (error) {
       console.error("Failed to parse AI response or save trip:", error);
       toast("There was an error saving your trip. The AI response was not valid JSON.");
     }
-  }
-  // ===== MODIFIED FUNCTION END =====
+  }
 
-  return (
+  return (
     <div className='sm:px-10 md:px-32 lg:px-56 xl:px-72 px-5 mt-10'>
       <h2 className='font-bold text-3xl'>
         Tell Us Your Travel Preference 🏕️🌴
@@ -234,7 +236,7 @@ function CreateTrip() {
       </Dialog>
 
     </div>
-  );
+  );
 }
 
 export default CreateTrip;
