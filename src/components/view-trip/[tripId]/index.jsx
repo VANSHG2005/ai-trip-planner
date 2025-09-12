@@ -7,7 +7,6 @@ import InfoSection from '../components/InfoSection';
 import Hero from '@/components/custom/Hero';
 import Hotels from '../components/Hotels';
 import PlacesToVisit from '../components/PlacesToVisit';
-import Itinerary from '../components/Itinerary';
 import Footer from '../components/Footer';
 
 function ViewTrip() {
@@ -43,7 +42,6 @@ function ViewTrip() {
 
       {/* Daily Plan  */}
       <PlacesToVisit trip = {trip}/>
-      {/* <Itinerary trip = {trip} /> */}
 
       {/* Footer */}
       <Footer />

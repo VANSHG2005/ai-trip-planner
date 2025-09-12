@@ -1,9 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-// Helper function to extract a cleaner name for search
 const extractSearchableName = (placeName) => {
-  // Define common prefixes that can be removed for a cleaner search
   const prefixesToRemove = [
     "Check-in & Explore ",
     "Explore ",
@@ -29,11 +27,10 @@ const extractSearchableName = (placeName) => {
   for (const prefix of prefixesToRemove) {
     if (cleanedName.startsWith(prefix)) {
       cleanedName = cleanedName.substring(prefix.length);
-      break; // Stop after finding the first matching prefix
+      break; 
     }
   }
 
-  // Remove any trailing descriptions if they are separated by common delimiters
   const delimiters = [" (", " - ", ": "];
   for (const delimiter of delimiters) {
     const index = cleanedName.indexOf(delimiter);
@@ -59,7 +56,6 @@ function PlacesToVisit({ trip }) {
             <div className='flex flex-col gap-4 mt-2'>
               {item.activities?.map((place, placeIndex) => {
                 
-                // Get the cleaner name for the search query
                 const searchableName = extractSearchableName(place.placeName);
                 const mapQuery = encodeURIComponent(searchableName);
                 const mapUrl = `https://www.google.com/maps/search/?api=1&query=${mapQuery}`;
@@ -73,7 +69,6 @@ function PlacesToVisit({ trip }) {
                         onError={(e) => { e.currentTarget.src = "/placeholder.jpg"; }}
                       />
                       <div className='flex flex-col gap-1 w-full'>
-                        {/* Display the original place name */}
                         <h4 className='font-bold text-md'>{place.placeName}</h4>
                         <p className='text-sm text-gray-500 line-clamp-3'>{place.placeDetails}</p>
                         <div className='mt-2 flex gap-4'>
