@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getUnsplashPhoto } from '@/service/GlobalApi'; // Ensure this path is correct
+import { getUnsplashPhoto } from '@/service/GlobalApi'; 
 
 const extractSearchableName = (placeName) => {
     const prefixesToRemove = [
