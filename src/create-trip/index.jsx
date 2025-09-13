@@ -79,7 +79,7 @@ function CreateTrip() {
       toast("Please Enter All the Details");
       return;
     }
-    if(formData?.noOfDays > 5){
+    if(formData?.noOfDays > 10){
       toast("Please Enter Trip Dates Less than 5");
       return;
     }
@@ -112,14 +112,11 @@ function CreateTrip() {
     const user = JSON.parse(localStorage.getItem('user'));
     const docId = Date.now().toString();
 
-    // 1. Clean the AI response to remove the markdown code block wrapper
     const cleanedResponse = TripData.replace(/^```json\s*/, '').replace(/\s*```$/, '');
 
     try {
-      // 2. Parse the cleaned string
       const parsedData = JSON.parse(cleanedResponse);
 
-      // 3. Save the valid JSON to Firestore
       await setDoc(doc(db,"AITrips",docId),{
         userSelection: formData,
         tripData: parsedData,

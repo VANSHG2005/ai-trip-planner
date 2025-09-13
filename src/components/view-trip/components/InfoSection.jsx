@@ -2,6 +2,7 @@ import { Button } from '@/components/ui/button';
 import { getUnsplashPhoto } from '@/service/GlobalApi'; 
 import React, { useEffect, useState } from 'react'; 
 import { IoIosSend } from "react-icons/io";
+import { toast } from 'sonner'; // 1. Import the toast component
 
 function InfoSection({ trip }) {
     const [photoUrl, setPhotoUrl] = useState('/placeholder.jpg');
@@ -18,23 +19,48 @@ function InfoSection({ trip }) {
             if (!query) return; 
 
             const response = await getUnsplashPhoto(query);
-            
-            // Check if Unsplash returned any results and get the URL
             const imageUrl = response.data?.results[0]?.urls?.regular;
 
             if (imageUrl) {
                 setPhotoUrl(imageUrl);
             }
-            // If no image is found, it will default to the placeholder
         } catch (error) {
             console.error("Failed to fetch image from Unsplash:", error);
-            // On error, we also keep the placeholder image
+        }
+    };
+
+    // 2. Add the handleShare function
+    const handleShare = async () => {
+        const url = window.location.href;
+        const shareData = {
+            title: 'My AI-Generated Travel Itinerary',
+            text: `Check out this amazing ${trip?.userSelection?.noOfDays}-day trip I planned to ${trip?.userSelection?.location?.properties.formatted}!`,
+            url: url,
+        };
+
+        // Check if the Web Share API is supported
+        if (navigator.share && navigator.canShare(shareData)) {
+            try {
+                await navigator.share(shareData);
+            } catch (error) {
+                // This error typically occurs if the user cancels the share action.
+                // You can choose to ignore it or log it.
+                console.log('User cancelled the share action or it failed.', error);
+            }
+        } else {
+            // Fallback for browsers that don't support the Web Share API
+            try {
+                await navigator.clipboard.writeText(url);
+                toast.success("Link copied to clipboard!");
+            } catch (err) {
+                toast.error("Failed to copy the link.");
+                console.error('Failed to copy: ', err);
+            }
         }
     };
 
     return (
         <div>
-            {/* Update the img src to use our state variable */}
             <img 
                 src={photoUrl} 
                 className="h-[350px] w-full object-cover rounded-lg shadow-md" 
@@ -58,7 +84,10 @@ function InfoSection({ trip }) {
                         </h2>
                     </div>
                 </div> 
-                <Button> <IoIosSend /></Button>
+                {/* 3. Add the onClick handler to the button */}
+                <Button onClick={handleShare} title="Share this trip">
+                    <IoIosSend />
+                </Button>
             </div>
         </div>
     );
