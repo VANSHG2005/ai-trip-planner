@@ -7,117 +7,147 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover"
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
 } from "@/components/ui/dialog"
 import { FcGoogle } from "react-icons/fc";
 import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { auth } from '@/service/firebaseConfig';
 import { toast } from 'sonner';
+// Import icons from lucide-react
+import { LogOut, MapPinned, UserPlus } from 'lucide-react';
 
 function Header() {
-    const [user, setUser] = useState(null);
-    const [openDialog, setOpenDialog] = useState(false);
-    const navigate = useNavigate();
+    const [user, setUser] = useState(null);
+    const [openDialog, setOpenDialog] = useState(false);
+    const navigate = useNavigate();
 
-    useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-    }, []);
-
-    const handleGoogleSignIn = () => {
-        const provider = new GoogleAuthProvider();
-        signInWithPopup(auth, provider)
-            .then((result) => {
+    useEffect(() => {
+        // Listen for auth state changes to keep user state in sync
+        const unsubscribe = auth.onAuthStateChanged(userAuth => {
+            if (userAuth) {
                 const userProfile = {
-                    name: result.user.displayName,
-                    email: result.user.email,
-                    photoURL: result.user.photoURL,
-                    uid: result.user.uid,
+                    name: userAuth.displayName,
+                    email: userAuth.email,
+                    photoURL: userAuth.photoURL,
+                    uid: userAuth.uid,
                 };
                 localStorage.setItem('user', JSON.stringify(userProfile));
                 setUser(userProfile);
-                setOpenDialog(false);
-                toast("Signed in successfully!");
-            }).catch((error) => {
-                console.error("Google Sign-In Error:", error);
-                toast("Failed to sign in with Google. Please try again.");
-            });
-    };
-
-    const handleLogout = () => {
-        signOut(auth).then(() => {
-            localStorage.removeItem('user');
-            setUser(null);
-            toast("You have been logged out.");
-            navigate('/');
-        }).catch((error) => {
-            console.error("Logout Error:", error);
-            toast("Failed to log out. Please try again.");
+            } else {
+                localStorage.removeItem('user');
+                setUser(null);
+            }
         });
-    };
 
-    return (
-        <div className='p-3 shadow-sm flex justify-between items-center px-5'>
-            <Link to='/'>
-                <img src='/logo.svg' className='w-40 h-12 cursor-pointer' alt="Logo" />
-            </Link>
-            <div>
-                {user ? (
-                    <div className='flex items-center gap-3'>
-                        <Link to={'/my-trips'}>
-                            <Button variant="outline" className="rounded-full">My Trips</Button>
-                        </Link>
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <img 
-                                    src={user.photoURL} 
-                                    className='h-[35px] w-[35px] rounded-full cursor-pointer' 
-                                    alt="User profile"
-                                />
-                            </PopoverTrigger>
-                            <PopoverContent className="w-44">
-                                <h2 
-                                    onClick={handleLogout} 
-                                    className="cursor-pointer p-2 hover:bg-gray-100 rounded-md"
-                                >
-                                    Logout
-                                </h2>
-                            </PopoverContent>
-                        </Popover>
-                    </div>
-                ) : (
-                    <Button className="h-10" onClick={() => setOpenDialog(true)}>
-                        Sign In
-                    </Button>
-                )}
+        // Cleanup subscription on unmount
+        return () => unsubscribe();
+    }, []);
+
+    const handleGoogleSignIn = () => {
+        const provider = new GoogleAuthProvider();
+        signInWithPopup(auth, provider)
+            .then((result) => {
+                setOpenDialog(false);
+                toast.success("Signed in successfully!");
+            }).catch((error) => {
+                console.error("Google Sign-In Error:", error);
+                toast.error("Failed to sign in. Please try again.");
+            });
+    };
+
+    const handleLogout = () => {
+        signOut(auth).then(() => {
+            toast.success("You have been logged out.");
+            navigate('/');
+        }).catch((error) => {
+            console.error("Logout Error:", error);
+            toast.error("Failed to log out. Please try again.");
+        });
+    };
+
+    return (
+        <header className='sticky top-0 z-50'>
+            <div className='flex justify-between items-center p-3 px-4 md:px-6 border-b bg-white/80 backdrop-blur-sm'>
+                <Link to='/'>
+                    <img src='/logo.svg' className='w-36 h-auto cursor-pointer transition-opacity hover:opacity-80' alt="Logo" />
+                </Link>
+                
+                <div className='flex items-center gap-2'>
+                    {user ? (
+                        <>
+                            <Link to={'/my-trips'}>
+                                <Button variant="ghost" className="hidden sm:flex items-center gap-2 rounded-full">
+                                    <MapPinned className='h-5 w-5' /> My Trips
+                                </Button>
+                            </Link>
+                            <Popover>
+                                <PopoverTrigger asChild>
+                                    <img 
+                                        src={user.photoURL} 
+                                        className='h-9 w-9 rounded-full cursor-pointer transition-transform hover:scale-110' 
+                                        alt="User profile"
+                                    />
+                                </PopoverTrigger>
+                                <PopoverContent className="w-56 mt-2 mr-2" align="end">
+                                    <div className='p-2'>
+                                        <p className="font-semibold truncate">{user.name}</p>
+                                        <p className="text-sm text-gray-500 truncate">{user.email}</p>
+                                    </div>
+                                    <div className='border-t my-2'></div>
+                                    <Link to='/my-trips'>
+                                        <div className='flex sm:hidden items-center gap-2 p-2 hover:bg-gray-100 rounded-md cursor-pointer'>
+                                            <MapPinned className='h-4 w-4' /> My Trips
+                                        </div>
+                                    </Link>
+                                    <div 
+                                        onClick={handleLogout} 
+                                        className="flex items-center gap-2 p-2 text-red-500 hover:bg-red-50 rounded-md cursor-pointer"
+                                    >
+                                        <LogOut className='h-4 w-4' /> Logout
+                                    </div>
+                                </PopoverContent>
+                            </Popover>
+                        </>
+                    ) : (
+                        <Button 
+                            onClick={() => setOpenDialog(true)}
+                            className="flex items-center gap-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white transition-all hover:shadow-md"
+                        >
+                            <UserPlus className='h-5 w-5' /> Sign In
+                        </Button>
+                    )}
+                </div>
             </div>
 
             {/* Sign In Dialog */}
             <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogDescription className="text-center">
-                            <img src="/logo.svg" className='w-40 mx-auto' alt="Logo"/>
-                            <h2 className='font-bold text-lg mt-7'>Sign In with Google</h2>
-                            <p>Sign In to the Website with Google Authentication Securely.</p>
-                            <Button 
-                                onClick={handleGoogleSignIn}
-                                className="w-full mt-5 flex gap-4 items-center"
-                            >
-                                <FcGoogle className='h-7 w-7' />
-                                Sign In with Google
-                            </Button>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader className="text-center">
+                        <DialogTitle className="text-2xl font-bold tracking-tight">
+                            Welcome to Trip Planner
+                        </DialogTitle>
+                        <DialogDescription className="mt-2 text-gray-500">
+                            Sign in with your Google account to save and manage your trips.
                         </DialogDescription>
                     </DialogHeader>
+                    <div className='py-4'>
+                        <Button 
+                            onClick={handleGoogleSignIn}
+                            className="w-full h-12 flex gap-3 items-center text-lg transition-transform hover:scale-105"
+                            variant="outline"
+                        >
+                            <FcGoogle className='h-6 w-6' />
+                            Sign In with Google
+                        </Button>
+                    </div>
                 </DialogContent>
             </Dialog>
-        </div>
-    )
+        </header>
+    )
 }
 
 export default Header;

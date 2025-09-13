@@ -84,7 +84,6 @@ function InfoSection({ trip }) {
                         </h2>
                     </div>
                 </div> 
-                {/* 3. Add the onClick handler to the button */}
                 <Button onClick={handleShare} title="Share this trip">
                     <IoIosSend />
                 </Button>
