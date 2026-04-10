@@ -18,7 +18,7 @@ import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { auth } from '@/service/firebaseConfig';
 import { toast } from 'sonner';
 // Import icons from lucide-react
-import { LogOut, MapPinned, UserPlus } from 'lucide-react';
+import { LogOut, MapPinned, UserPlus, UserCircle } from 'lucide-react';
 
 function Header() {
     const [user, setUser] = useState(null);
@@ -98,6 +98,11 @@ function Header() {
                                         <p className="text-sm text-gray-500 truncate">{user.email}</p>
                                     </div>
                                     <div className='border-t my-2'></div>
+                                    <Link to='/profile'>
+                                        <div className='flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md cursor-pointer'>
+                                            <UserCircle className='h-4 w-4' /> My Profile
+                                        </div>
+                                    </Link>
                                     <Link to='/my-trips'>
                                         <div className='flex sm:hidden items-center gap-2 p-2 hover:bg-gray-100 rounded-md cursor-pointer'>
                                             <MapPinned className='h-4 w-4' /> My Trips
