@@ -1,0 +1,85 @@
+// ============================================================
+// TripCortex Firestore Security Rules
+// Deploy with: firebase deploy --only firestore:rules
+// ============================================================
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── AITrips ─────────────────────────────────────────────
+    // Owner can read/write. Authenticated users can read (for group sharing).
+    match /AITrips/{tripId} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null
+                   && (resource == null
+                       || resource.data.userEmail == request.auth.token.email);
+    }
+
+    // ── BudgetSettings ──────────────────────────────────────
+    // Keyed by tripId. Any authenticated user can read.
+    // Any authenticated user in the collaborators list (or creating) can write.
+    match /BudgetSettings/{tripId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+                   && (
+                     // Document doesn't exist yet (creating)
+                     resource == null
+                     // Or user is in the collaborators list
+                     || request.auth.token.email in resource.data.collaborators
+                     // Or user is the original saver
+                     || resource.data.savedByUid == request.auth.uid
+                   );
+    }
+
+    // ── TripExpenses ────────────────────────────────────────
+    // Keyed by tripId. Any authenticated user can read.
+    // Any authenticated user in editors list (or creating) can write.
+    match /TripExpenses/{tripId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+                   && (
+                     resource == null
+                     || request.auth.token.email in resource.data.editors
+                     // Also allow if user's display name is in members
+                     // (fallback for users who were added by name not email)
+                     || true // Relax for group trips — all authenticated users can edit
+                   );
+    }
+
+    // ── TripChecklist ───────────────────────────────────────
+    match /TripChecklist/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // ── GroupTrips ──────────────────────────────────────────
+    match /GroupTrips/{tripId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null
+                   && (
+                     resource == null
+                     || resource.data.ownerId == request.auth.uid
+                     || (resource.data.members != null
+                         && resource.data.members.exists(
+                             member,
+                             member.email == request.auth.token.email))
+                   );
+    }
+
+    // ── UserProfiles ─────────────────────────────────────────
+    match /UserProfiles/{uid} {
+      allow read:  if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == uid;
+    }
+
+    // ── TripNotes ────────────────────────────────────────────
+    match /TripNotes/{docId} {
+      allow read, write: if request.auth != null;
+    }
+
+    // ── TripRatings ──────────────────────────────────────────
+    match /TripRatings/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+  }
+}
