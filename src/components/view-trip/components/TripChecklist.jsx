@@ -38,11 +38,11 @@ function TripChecklist({ trip }) {
       const saved = JSON.parse(localStorage.getItem(storageKey) || '{}')
       setChecked(saved.checked || {})
       setCustomItems(saved.custom || [])
-    } catch {}
+    } catch {} // eslint-disable-line no-empty
   }, [storageKey])
 
   const persist = (ch, ci) => {
-    try { localStorage.setItem(storageKey, JSON.stringify({ checked: ch, custom: ci })) } catch {}
+    try { localStorage.setItem(storageKey, JSON.stringify({ checked: ch, custom: ci })) } catch {} // eslint-disable-line no-empty
   }
 
   const toggle = (item) => {

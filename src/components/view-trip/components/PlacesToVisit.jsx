@@ -45,7 +45,7 @@ function PlacesToVisit({ trip }) {
           </div>
         </div>
         <div className="flex items-center rounded-xl border border-border overflow-hidden">
-          {[{ id: 'timeline', Icon: List }, { id: 'grid', Icon: Grid3X3 }].map(({ id, Icon }) => (
+          {[{ id: 'timeline', Icon: List }, { id: 'grid', Icon: Grid3X3 }].map(({ id, Icon }) => ( // eslint-disable-line no-unused-vars
             <div key={id} role="button" tabIndex={0}
               onClick={() => setViewMode(id)}
               onKeyDown={e => e.key === 'Enter' && setViewMode(id)}

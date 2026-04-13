@@ -51,7 +51,7 @@ export default function Footer() {
             © {year} TripCortex. Made with <Heart className="w-3 h-3 text-red-400 fill-red-400" /> for travelers.
           </p>
           <div className="flex items-center gap-3">
-            {[{ icon: Twitter, label: 'Twitter' }, { icon: Github, label: 'GitHub' }].map(({ icon: Icon, label }) => (
+            {[{ icon: Twitter, label: 'Twitter' }, { icon: Github, label: 'GitHub' }].map(({ icon: Icon, label }) => ( // eslint-disable-line no-unused-vars
               <motion.button key={label} whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all" aria-label={label}>
                 <Icon className="w-4 h-4" />

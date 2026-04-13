@@ -9,7 +9,6 @@ export default function TripTimeline({ trip }) {
 
   const itinerary = trip?.tripData?.tripData?.itinerary || []
   const days      = Number(trip?.userSelection?.noOfDays || itinerary.length || 0)
-  const location  = trip?.userSelection?.location?.properties?.formatted || 'your destination'
 
   // Compute countdown
   const today = new Date(); today.setHours(0,0,0,0)

@@ -8,6 +8,17 @@ import Hotels from '../components/Hotels';
 import PlacesToVisit from '../components/PlacesToVisit';
 import Footer from '../components/Footer';
 import TripViewSkeleton from '../components/TripViewSkeleton'; 
+import GroupTrip from '../components/GroupTrip';
+import TripTimeline from '../components/TripTimeline';
+import TripChecklist from '../components/TripChecklist';
+import TripNotes from '../components/TripNotes';
+import TripAIChat from '../components/TripAIChat';
+import WeatherWidget from '../components/WeatherWidget';
+import TripExpenses from '../components/TripExpenses';
+import TripMapView from '../components/TripMapView';
+import BudgetEstimator from '../components/BudgetEstimator';
+import CurrencyConverter from '../components/CurrencyConverter';
+import TripRating from '../components/TripRating';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, AlertTriangle } from 'lucide-react';
 
@@ -88,6 +99,28 @@ function ViewTrip() {
                 {/* Main Content Sections */}
                 <div className="space-y-12">
                     <InfoSection trip={trip} />
+
+                    {/* Interactive Trip Tools */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-6">
+                            <GroupTrip tripId={tripId} trip={trip} />
+                            <TripTimeline trip={trip} />
+                            <TripChecklist trip={trip} />
+                            <TripNotes tripId={tripId} />
+                            <TripRating tripId={tripId} />
+                        </div>
+                        <div className="space-y-6">
+                            <TripAIChat trip={trip} />
+                            <WeatherWidget trip={trip} />
+                            <TripExpenses tripId={tripId} />
+                            <BudgetEstimator trip={trip} tripId={tripId} />
+                            <CurrencyConverter />
+                        </div>
+                    </div>
+
+                    <hr />
+                    <TripMapView trip={trip} />
+                    
                     <hr />
                     <Hotels trip={trip} />
                     <hr />

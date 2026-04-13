@@ -1,158 +1,224 @@
 import React, { useEffect, useState } from 'react'
-import { Button } from '@/components/ui/button'
-import { Link, useNavigate } from 'react-router-dom'
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover"
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog"
-import { FcGoogle } from "react-icons/fc";
-import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { auth } from '@/service/firebaseConfig';
-import { toast } from 'sonner';
-// Import icons from lucide-react
-import { LogOut, MapPinned, UserPlus, UserCircle } from 'lucide-react';
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { motion, AnimatePresence } from 'framer-motion'
+import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth'
+import { auth } from '@/service/firebaseConfig'
+import { toast } from 'sonner'
+import { LogOut, MapPinned, UserPlus, Sun, Moon, Menu, X, Sparkles, Globe, User } from 'lucide-react'
+import { useTheme } from './ThemeProvider'
 
 function Header() {
-    const [user, setUser] = useState(null);
-    const [openDialog, setOpenDialog] = useState(false);
-    const navigate = useNavigate();
+  const [user, setUser] = useState(null)
+  const [scrolled, setScrolled] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { theme, setTheme } = useTheme()
 
-    useEffect(() => {
-        // Listen for auth state changes to keep user state in sync
-        const unsubscribe = auth.onAuthStateChanged(userAuth => {
-            if (userAuth) {
-                const userProfile = {
-                    name: userAuth.displayName,
-                    email: userAuth.email,
-                    photoURL: userAuth.photoURL,
-                    uid: userAuth.uid,
-                };
-                localStorage.setItem('user', JSON.stringify(userProfile));
-                setUser(userProfile);
-            } else {
-                localStorage.removeItem('user');
-                setUser(null);
-            }
-        });
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(userAuth => {
+      if (userAuth) {
+        const profile = { name: userAuth.displayName, email: userAuth.email, photoURL: userAuth.photoURL, uid: userAuth.uid }
+        localStorage.setItem('user', JSON.stringify(profile))
+        setUser(profile)
+      } else {
+        localStorage.removeItem('user')
+        setUser(null)
+      }
+    })
+    return () => unsubscribe()
+  }, [])
 
-        // Cleanup subscription on unmount
-        return () => unsubscribe();
-    }, []);
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
-    const handleGoogleSignIn = () => {
-        const provider = new GoogleAuthProvider();
-        signInWithPopup(auth, provider)
-            .then((result) => {
-                setOpenDialog(false);
-                toast.success("Signed in successfully!");
-            }).catch((error) => {
-                console.error("Google Sign-In Error:", error);
-                toast.error("Failed to sign in. Please try again.");
-            });
-    };
+  useEffect(() => { setMobileOpen(false) }, [location])
 
-    const handleLogout = () => {
-        signOut(auth).then(() => {
-            toast.success("You have been logged out.");
-            navigate('/');
-        }).catch((error) => {
-            console.error("Logout Error:", error);
-            toast.error("Failed to log out. Please try again.");
-        });
-    };
+  const handleSignIn = () => {
+    const provider = new GoogleAuthProvider()
+    signInWithPopup(auth, provider)
+      .then(() => toast.success('Welcome! 👋'))
+      .catch(() => toast.error('Sign-in failed. Please try again.'))
+  }
 
-    return (
-        <header className='sticky top-0 z-50'>
-            <div className='flex justify-between items-center p-3 px-4 md:px-6 border-b bg-white/80 backdrop-blur-sm'>
-                <Link to='/'>
-                    <img src='/logo.svg' className='w-36 h-auto cursor-pointer transition-opacity hover:opacity-80' alt="Logo" />
-                </Link>
-                
-                <div className='flex items-center gap-2'>
-                    {user ? (
-                        <>
-                            <Link to={'/my-trips'}>
-                                <Button variant="ghost" className="hidden sm:flex items-center gap-2 rounded-full">
-                                    <MapPinned className='h-5 w-5' /> My Trips
-                                </Button>
-                            </Link>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <img 
-                                        src={user.photoURL} 
-                                        className='h-9 w-9 rounded-full cursor-pointer transition-transform hover:scale-110' 
-                                        alt="User profile"
-                                    />
-                                </PopoverTrigger>
-                                <PopoverContent className="w-56 mt-2 mr-2" align="end">
-                                    <div className='p-2'>
-                                        <p className="font-semibold truncate">{user.name}</p>
-                                        <p className="text-sm text-gray-500 truncate">{user.email}</p>
-                                    </div>
-                                    <div className='border-t my-2'></div>
-                                    <Link to='/profile'>
-                                        <div className='flex items-center gap-2 p-2 hover:bg-gray-100 rounded-md cursor-pointer'>
-                                            <UserCircle className='h-4 w-4' /> My Profile
-                                        </div>
-                                    </Link>
-                                    <Link to='/my-trips'>
-                                        <div className='flex sm:hidden items-center gap-2 p-2 hover:bg-gray-100 rounded-md cursor-pointer'>
-                                            <MapPinned className='h-4 w-4' /> My Trips
-                                        </div>
-                                    </Link>
-                                    <div 
-                                        onClick={handleLogout} 
-                                        className="flex items-center gap-2 p-2 text-red-500 hover:bg-red-50 rounded-md cursor-pointer"
-                                    >
-                                        <LogOut className='h-4 w-4' /> Logout
-                                    </div>
-                                </PopoverContent>
-                            </Popover>
-                        </>
-                    ) : (
-                        <Button 
-                            onClick={() => setOpenDialog(true)}
-                            className="flex items-center gap-2 rounded-full bg-blue-600 hover:bg-blue-700 text-white transition-all hover:shadow-md"
-                        >
-                            <UserPlus className='h-5 w-5' /> Sign In
-                        </Button>
-                    )}
+  const handleLogout = () => {
+    signOut(auth).then(() => { toast.success('Signed out'); navigate('/') })
+      .catch(() => toast.error('Failed to sign out.'))
+  }
+
+  const navLinks = [
+    { label: 'Explore', href: '/', icon: Globe },
+    { label: 'My Trips', href: '/my-trips', icon: MapPinned },
+    { label: 'Plan Trip', href: '/create-trip', icon: Sparkles },
+  ]
+
+  const isActive = (href) => location.pathname === href
+
+  return (
+    <>
+      <motion.header
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
+          scrolled ? 'glass shadow-lg border-b border-border/50' : 'bg-transparent border-b border-transparent'
+        }`}
+      >
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <Link to="/" className="flex items-center gap-2.5 group">
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <div className="w-8 h-8 rounded-xl bg-linear-to-br from-blue-500 to-violet-600 flex items-center justify-center shadow-lg">
+                  <Sparkles className="w-4 h-4 text-white" />
                 </div>
-            </div>
+              </motion.div>
+              <span className="font-bold text-lg gradient-text hidden sm:block" style={{ fontFamily: 'Sora, sans-serif' }}>
+                TripCortex
+              </span>
+            </Link>
 
-            {/* Sign In Dialog */}
-            <Dialog open={openDialog} onOpenChange={setOpenDialog}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader className="text-center">
-                        <DialogTitle className="text-2xl font-bold tracking-tight">
-                            Welcome to Trip Planner
-                        </DialogTitle>
-                        <DialogDescription className="mt-2 text-gray-500">
-                            Sign in with your Google account to save and manage your trips.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className='py-4'>
-                        <Button 
-                            onClick={handleGoogleSignIn}
-                            className="w-full h-12 flex gap-3 items-center text-lg transition-transform hover:scale-105"
-                            variant="outline"
-                        >
-                            <FcGoogle className='h-6 w-6' />
-                            Sign In with Google
-                        </Button>
+            {/* Desktop Nav */}
+            <nav className="hidden md:flex items-center gap-1">
+              {navLinks.map(link => (
+                <Link key={link.href} to={link.href}>
+                  <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                    className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                      isActive(link.href)
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}>
+                    <link.icon className="w-3.5 h-3.5" />
+                    {link.label}
+                  </motion.div>
+                </Link>
+              ))}
+            </nav>
+
+            {/* Right actions */}
+            <div className="flex items-center gap-2">
+              {/* Theme toggle */}
+              <motion.button
+                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="w-9 h-9 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+                aria-label="Toggle theme"
+              >
+                <AnimatePresence mode="wait">
+                  {theme === 'dark'
+                    ? <motion.div key="sun" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.2 }}><Sun className="w-4 h-4" /></motion.div>
+                    : <motion.div key="moon" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.2 }}><Moon className="w-4 h-4" /></motion.div>
+                  }
+                </AnimatePresence>
+              </motion.button>
+
+              {user ? (
+                <div className="relative group">
+                  <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <img
+                      src={user.photoURL || '/placeholder.jpg'}
+                      className="w-9 h-9 rounded-xl border-2 border-border object-cover cursor-pointer"
+                      alt={user.name}
+                      onError={e => { e.currentTarget.style.display='none' }}
+                    />
+                  </motion.button>
+                  {/* Dropdown */}
+                  <div className="absolute right-0 top-full mt-2 w-56 invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-all duration-200 translate-y-1 group-hover:translate-y-0 pointer-events-none group-hover:pointer-events-auto">
+                    <div className="card-premium p-2">
+                      <div className="px-3 py-2 mb-1">
+                        <p className="font-semibold text-sm truncate">{user.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                      </div>
+                      <div className="border-t border-border my-1" />
+                      <Link to="/profile">
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted cursor-pointer transition-colors">
+                          <User className="w-4 h-4 text-muted-foreground" /> Profile
+                        </div>
+                      </Link>
+                      <Link to="/my-trips">
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm hover:bg-muted cursor-pointer transition-colors">
+                          <MapPinned className="w-4 h-4 text-muted-foreground" /> My Trips
+                        </div>
+                      </Link>
+                      <div className="border-t border-border my-1" />
+                      <div onClick={handleLogout}
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 cursor-pointer transition-colors">
+                        <LogOut className="w-4 h-4" /> Sign Out
+                      </div>
                     </div>
-                </DialogContent>
-            </Dialog>
-        </header>
-    )
+                  </div>
+                </div>
+              ) : (
+                <motion.button
+                  whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+                  onClick={handleSignIn}
+                  className="hidden sm:flex btn-primary items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold"
+                >
+                  <UserPlus className="w-4 h-4" /> Sign In
+                </motion.button>
+              )}
+
+              {/* Mobile toggle */}
+              <motion.button
+                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                onClick={() => setMobileOpen(!mobileOpen)}
+                className="md:hidden w-9 h-9 rounded-xl flex items-center justify-center hover:bg-muted transition-colors"
+              >
+                {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              </motion.button>
+            </div>
+          </div>
+        </div>
+
+        {/* Mobile Nav */}
+        <AnimatePresence>
+          {mobileOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+              className="md:hidden border-t border-border overflow-hidden glass"
+            >
+              <div className="px-4 py-4 space-y-1">
+                {navLinks.map(link => (
+                  <Link key={link.href} to={link.href}>
+                    <div className={`flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
+                      isActive(link.href) ? 'bg-primary/10 text-primary' : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}>
+                      <link.icon className="w-4 h-4" /> {link.label}
+                    </div>
+                  </Link>
+                ))}
+                {user && (
+                  <Link to="/profile">
+                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+                      <User className="w-4 h-4" /> Profile
+                    </div>
+                  </Link>
+                )}
+                {!user ? (
+                  <button onClick={handleSignIn}
+                    className="w-full btn-primary flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold mt-2">
+                    <UserPlus className="w-4 h-4" /> Sign In with Google
+                  </button>
+                ) : (
+                  <button onClick={handleLogout}
+                    className="w-full flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+                    <LogOut className="w-4 h-4" /> Sign Out
+                  </button>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.header>
+      <div className="h-16" />
+    </>
+  )
 }
 
-export default Header;
+export default Header

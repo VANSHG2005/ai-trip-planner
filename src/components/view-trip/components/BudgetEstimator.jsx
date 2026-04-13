@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useRef } from 'react'
+import React, { useState, useMemo, useEffect} from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Calculator, ChevronDown, ChevronUp, Save, RefreshCw, Users, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { db, auth } from '@/service/firebaseConfig'
@@ -224,3 +224,4 @@ export default function BudgetEstimator({ trip, tripId }) {
     </div>
   )
 }
+
