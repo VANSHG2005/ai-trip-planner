@@ -6,6 +6,8 @@ import { auth } from '@/service/firebaseConfig'
 import { toast } from 'sonner'
 import { LogOut, MapPinned, UserPlus, Sun, Moon, Menu, X, Sparkles, Globe, User } from 'lucide-react'
 import { useTheme } from './ThemeProvider'
+import CurrencyPicker from '@/components/ui/CurrencyPicker'
+import { useScrollDirection } from '@/hooks'
 
 function Header() {
   const [user, setUser] = useState(null)
@@ -14,6 +16,7 @@ function Header() {
   const navigate = useNavigate()
   const location = useLocation()
   const { theme, setTheme } = useTheme()
+  const scrollDir = useScrollDirection()
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(userAuth => {
@@ -61,9 +64,9 @@ function Header() {
     <>
       <motion.header
         initial={{ y: -100 }}
-        animate={{ y: 0 }}
-        transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-        className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
+        animate={{ y: scrollDir === 'down' && scrolled ? -100 : 0 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        className={`fixed top-0 inset-x-0 z-50 transition-colors duration-300 ${
           scrolled ? 'glass shadow-lg border-b border-border/50' : 'bg-transparent border-b border-transparent'
         }`}
       >
@@ -100,6 +103,11 @@ function Header() {
 
             {/* Right actions */}
             <div className="flex items-center gap-2">
+              {/* Currency Picker */}
+              <div className="hidden sm:block">
+                <CurrencyPicker />
+              </div>
+
               {/* Theme toggle */}
               <motion.button
                 whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
@@ -200,6 +208,10 @@ function Header() {
                     </div>
                   </Link>
                 )}
+                {/* Currency picker in mobile menu */}
+                <div className="px-4 py-2">
+                  <CurrencyPicker />
+                </div>
                 {!user ? (
                   <button onClick={handleSignIn}
                     className="w-full btn-primary flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold mt-2">

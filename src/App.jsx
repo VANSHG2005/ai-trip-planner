@@ -5,12 +5,12 @@ import CreateTrip from './create-trip/index.jsx'
 import Header from './components/custom/Header'
 import { Toaster } from 'sonner'
 import ViewTrip from './components/view-trip/[tripId]/index.jsx'
-import JoinTrip from './components/view-trip/components/JoinTrip'
 import MyTrips from './my-trips/index.jsx'
 import Profile from './profile/index.jsx'
 import Footer from './components/custom/Footer'
 import NotFound from './components/custom/NotFound'
 import { ThemeProvider } from './components/custom/ThemeProvider'
+import { CurrencyProvider } from './context/CurrencyContext'
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 
@@ -31,7 +31,6 @@ function AppInner() {
           <Route path='/' element={<Hero />} />
           <Route path='/create-trip' element={<CreateTrip />} />
           <Route path='/view-trip/:tripId' element={<ViewTrip />} />
-          <Route path='/join-trip/:tripId' element={<JoinTrip />} />
           <Route path='/my-trips' element={<MyTrips />} />
           <Route path='/profile' element={<Profile />} />
           <Route path='*' element={<NotFound />} />
@@ -45,21 +44,23 @@ function AppInner() {
 function App() {
   return (
     <ThemeProvider defaultTheme="light" storageKey="tripcortex-theme">
-      <Router>
-        <AppInner />
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            style: {
-              fontFamily: "'DM Sans', sans-serif",
-              borderRadius: '12px',
-              border: '1px solid var(--border)',
-              boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
-            },
-          }}
-          richColors
-        />
-      </Router>
+      <CurrencyProvider>
+        <Router>
+          <AppInner />
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              style: {
+                fontFamily: "'DM Sans', sans-serif",
+                borderRadius: '12px',
+                border: '1px solid var(--border)',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+              },
+            }}
+            richColors
+          />
+        </Router>
+      </CurrencyProvider>
     </ThemeProvider>
   )
 }
