@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { collection, query, where, getDocs, doc, deleteDoc, getDoc } from 'firebase/firestore'
 import { db } from '@/service/firebaseConfig'
-// eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion'
-import UserTripCard from './components/UserTripCard'
-import SkeletonCard from './components/SkeletonCard'
+import UserTripCard from './component/UserTripCard'
+import SkeletonCard from './component/SkeletonCard'
 import { Button } from '@/components/ui/button'
 import { PlusCircle, Frown, Users } from 'lucide-react'
 import { toast } from 'sonner'
@@ -42,7 +41,7 @@ export default function MyTrips() {
             const snap = await getDoc(doc(db, 'AITrips', id))
             if (snap.exists()) return { ...snap.data(), _source: 'shared' }
           } catch {
-            // Failed to fetch shared trip, return null
+            // Failed to fetch shared trip
           }
           return null
         })

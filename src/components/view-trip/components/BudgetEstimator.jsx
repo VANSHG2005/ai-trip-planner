@@ -1,9 +1,10 @@
-import React, { useState, useMemo, useEffect} from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Calculator, ChevronDown, ChevronUp, Save, RefreshCw, Users, AlertCircle, CheckCircle2 } from 'lucide-react'
+import { Calculator, ChevronDown, ChevronUp, Save, RefreshCw, AlertCircle, CheckCircle2 } from 'lucide-react'
 import { db, auth } from '@/service/firebaseConfig'
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { toast } from 'sonner'
+import { useCurrency } from '@/context/CurrencyContext'
 
 const PRESETS = {
   Cheap:    { hotel: 25,  food: 15,  activities: 10, transport: 5  },
@@ -19,6 +20,7 @@ const CATS = [
 ]
 
 export default function BudgetEstimator({ trip, tripId }) {
+  const { formatAmount } = useCurrency()
   const budgetType = trip?.userSelection?.budget || 'Moderate'
   const days       = Number(trip?.userSelection?.noOfDays || 3)
   const travStr    = trip?.userSelection?.traveler || '1'
@@ -85,7 +87,11 @@ export default function BudgetEstimator({ trip, tripId }) {
   const perPersonDay = useMemo(() => Object.values(costs).reduce((a, b) => a + b, 0), [costs])
   const perDay       = useMemo(() => perPersonDay * travelers, [perPersonDay, travelers])
   const total        = useMemo(() => perDay * days, [perDay, days])
-  const fmt          = n => `$${Math.round(n).toLocaleString()}`
+
+  // Use CurrencyContext for display when available, fallback to USD
+  const fmt = n => {
+    try { return formatAmount(n) } catch { return `$${Math.round(n).toLocaleString()}` }
+  }
 
   return (
     <div className="card-premium overflow-hidden">
@@ -118,7 +124,6 @@ export default function BudgetEstimator({ trip, tripId }) {
 
               {!loading && (
                 <>
-                  {/* Auth warning */}
                   {!auth.currentUser && (
                     <div className="mt-4 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30">
                       <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
@@ -126,18 +131,9 @@ export default function BudgetEstimator({ trip, tripId }) {
                     </div>
                   )}
 
-                  {/* Firestore rules reminder */}
-                  <div className="mt-3 flex items-center gap-2 px-3 py-2 rounded-xl bg-blue-50 dark:bg-blue-500/10 border border-blue-100 dark:border-blue-500/20">
-                    <AlertCircle className="w-3.5 h-3.5 text-blue-600 shrink-0" />
-                    <p className="text-xs text-blue-700 dark:text-blue-400">
-                      If save fails, run: <code className="font-mono bg-blue-100 dark:bg-blue-900/50 px-1 rounded">firebase deploy --only firestore:rules</code>
-                    </p>
-                  </div>
-
-                  {/* Summary */}
                   <div className="mt-4 grid grid-cols-3 gap-2 mb-5">
                     {[
-                      { l: 'Total (USD)',      v: fmt(total),        sub: `${days} days · ${travelers} people`, hi: true },
+                      { l: 'Total',            v: fmt(total),        sub: `${days} days · ${travelers} people`, hi: true },
                       { l: 'Per Day',          v: fmt(perDay),       sub: 'whole group' },
                       { l: 'Per Person / Day', v: fmt(perPersonDay), sub: budgetType },
                     ].map(c => (
@@ -149,7 +145,6 @@ export default function BudgetEstimator({ trip, tripId }) {
                     ))}
                   </div>
 
-                  {/* Controls */}
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">Per Person Per Day (USD)</p>
                   <div className="space-y-4">
                     {CATS.map(({ key, label, color }) => (
@@ -189,7 +184,7 @@ export default function BudgetEstimator({ trip, tripId }) {
                       <span className="text-right text-primary">{fmt(total)}</span>
                     </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">* All amounts in USD. Excludes international flights.</p>
+                  <p className="text-xs text-muted-foreground mt-2">* Amounts shown in your selected currency. Excludes international flights.</p>
 
                   {savedBy && (
                     <div className="mt-3 flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400">
@@ -197,7 +192,6 @@ export default function BudgetEstimator({ trip, tripId }) {
                     </div>
                   )}
 
-                  {/* Actions */}
                   <div className="flex gap-2 mt-4">
                     <motion.button whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
                       onClick={save} disabled={saving || !dirty || !auth.currentUser}
@@ -208,7 +202,7 @@ export default function BudgetEstimator({ trip, tripId }) {
                       }`}>
                       {saving
                         ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        : <><Save className="w-4 h-4" />Save & Sync with Group</>}
+                        : <><Save className="w-4 h-4" />Save &amp; Sync with Group</>}
                     </motion.button>
                     <button onClick={reset}
                       className="flex items-center gap-1.5 px-4 py-3 rounded-2xl border border-border text-sm font-medium hover:bg-muted cursor-pointer transition-colors">
@@ -224,4 +218,3 @@ export default function BudgetEstimator({ trip, tripId }) {
     </div>
   )
 }
-

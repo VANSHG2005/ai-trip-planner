@@ -1,42 +1,26 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeftRight, ChevronDown, ChevronUp, RefreshCw, Loader2 } from 'lucide-react'
-
-const CURRENCIES = [
-  { code:'USD', symbol:'$',  name:'US Dollar',        flag:'🇺🇸' },
-  { code:'EUR', symbol:'€',  name:'Euro',              flag:'🇪🇺' },
-  { code:'GBP', symbol:'£',  name:'British Pound',     flag:'🇬🇧' },
-  { code:'JPY', symbol:'¥',  name:'Japanese Yen',      flag:'🇯🇵' },
-  { code:'INR', symbol:'₹',  name:'Indian Rupee',      flag:'🇮🇳' },
-  { code:'AUD', symbol:'A$', name:'Australian Dollar', flag:'🇦🇺' },
-  { code:'CAD', symbol:'C$', name:'Canadian Dollar',   flag:'🇨🇦' },
-  { code:'CHF', symbol:'Fr', name:'Swiss Franc',       flag:'🇨🇭' },
-  { code:'SGD', symbol:'S$', name:'Singapore Dollar',  flag:'🇸🇬' },
-  { code:'AED', symbol:'د.إ',name:'UAE Dirham',        flag:'🇦🇪' },
-  { code:'THB', symbol:'฿',  name:'Thai Baht',         flag:'🇹🇭' },
-  { code:'IDR', symbol:'Rp', name:'Indonesian Rupiah', flag:'🇮🇩' },
-  { code:'MYR', symbol:'RM', name:'Malaysian Ringgit', flag:'🇲🇾' },
-  { code:'HKD', symbol:'HK$',name:'Hong Kong Dollar',  flag:'🇭🇰' },
-  { code:'NZD', symbol:'NZ$',name:'New Zealand Dollar',flag:'🇳🇿' },
-  { code:'KRW', symbol:'₩',  name:'South Korean Won',  flag:'🇰🇷' },
-  { code:'CNY', symbol:'¥',  name:'Chinese Yuan',      flag:'🇨🇳' },
-  { code:'MXN', symbol:'$',  name:'Mexican Peso',      flag:'🇲🇽' },
-  { code:'BRL', symbol:'R$', name:'Brazilian Real',    flag:'🇧🇷' },
-  { code:'ZAR', symbol:'R',  name:'South African Rand',flag:'🇿🇦' },
-]
+import { useCurrency } from '@/context/CurrencyContext'
 
 let RATE_CACHE = null
 let CACHE_TS   = 0
 
 export default function CurrencyConverter() {
+  const { currency: ctxCurrency, currencies = [] } = useCurrency()
   const [expanded, setExpanded] = useState(false)
   const [amount,   setAmount]   = useState('100')
   const [from,     setFrom]     = useState('USD')
-  const [to,       setTo]       = useState('INR')
+  const [to,       setTo]       = useState(() => ctxCurrency?.code || 'INR')
   const [rates,    setRates]    = useState(null)
   const [loading,  setLoading]  = useState(false)
   const [error,    setError]    = useState(null)
   const [lastUpd,  setLastUpd]  = useState(null)
+
+  // Sync 'to' with global currency context
+  useEffect(() => {
+    if (ctxCurrency?.code) setTo(ctxCurrency.code)
+  }, [ctxCurrency?.code])
 
   const fetchRates = useCallback(async (force = false) => {
     const now = Date.now()
@@ -73,8 +57,8 @@ export default function CurrencyConverter() {
   }
 
   const swap = () => { setFrom(to); setTo(from) }
-  const fromC = CURRENCIES.find(c => c.code === from)
-  const toC   = CURRENCIES.find(c => c.code === to)
+  const fromC = currencies.find(c => c.code === from)
+  const toC   = currencies.find(c => c.code === to)
 
   return (
     <div className="card-premium overflow-hidden">
@@ -88,7 +72,7 @@ export default function CurrencyConverter() {
           </div>
           <div className="text-left">
             <p className="font-bold text-sm" style={{ fontFamily: 'Sora, sans-serif' }}>Currency Converter</p>
-            <p className="text-xs text-muted-foreground">Live rates · 20 currencies</p>
+            <p className="text-xs text-muted-foreground">Live rates · {currencies.length} currencies</p>
           </div>
         </div>
         {loading ? <Loader2 className="w-4 h-4 animate-spin text-primary" /> :
@@ -115,7 +99,7 @@ export default function CurrencyConverter() {
                   <div className="relative">
                     <select value={from} onChange={e => setFrom(e.target.value)}
                       className="w-full appearance-none text-sm px-3 py-2.5 rounded-xl border border-border bg-card focus:outline-none focus:border-primary pr-8 cursor-pointer">
-                      {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.flag} {c.code} — {c.name}</option>)}
+                      {currencies.map(c => <option key={c.code} value={c.code}>{c.flag} {c.code} — {c.name}</option>)}
                     </select>
                     <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
                   </div>
@@ -129,7 +113,7 @@ export default function CurrencyConverter() {
                   <div className="relative">
                     <select value={to} onChange={e => setTo(e.target.value)}
                       className="w-full appearance-none text-sm px-3 py-2.5 rounded-xl border border-border bg-card focus:outline-none focus:border-primary pr-8 cursor-pointer">
-                      {CURRENCIES.map(c => <option key={c.code} value={c.code}>{c.flag} {c.code} — {c.name}</option>)}
+                      {currencies.map(c => <option key={c.code} value={c.code}>{c.flag} {c.code} — {c.name}</option>)}
                     </select>
                     <ChevronDown className="absolute right-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
                   </div>

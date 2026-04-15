@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { CheckSquare, Square, ChevronDown, ChevronUp, Plus, Trash2, RefreshCw, Package } from 'lucide-react'
+import { useLocalStorage } from '@/hooks'
 
 const BASE_ITEMS = {
   '📄 Documents': ['Passport / ID','Travel insurance','Hotel confirmations','Flight tickets','Visa (if required)','Emergency contacts'],
@@ -17,9 +18,7 @@ const CLIMATE_EXTRAS = {
 
 function TripChecklist({ trip }) {
   const [expanded, setExpanded] = useState(false)
-  const [checked, setChecked] = useState({})
   const [newItem, setNewItem] = useState('')
-  const [customItems, setCustomItems] = useState([])
   const [activeCategory, setActiveCategory] = useState(null)
 
   const loc = (trip?.userSelection?.location?.properties?.formatted || '').toLowerCase()
@@ -32,36 +31,29 @@ function TripChecklist({ trip }) {
   if (extras.length > 0) allCategories['⭐ Destination Extras'] = extras
 
   const storageKey = `checklist-${trip?.id || 'default'}`
+  const [checklistData, setChecklistData] = useLocalStorage(storageKey, { checked: {}, custom: [] })
 
-  useEffect(() => {
-    try {
-      const saved = JSON.parse(localStorage.getItem(storageKey) || '{}')
-      setChecked(saved.checked || {})
-      setCustomItems(saved.custom || [])
-    } catch {} // eslint-disable-line no-empty
-  }, [storageKey])
+  const checked     = checklistData.checked || {}
+  const customItems = checklistData.custom  || []
 
-  const persist = (ch, ci) => {
-    try { localStorage.setItem(storageKey, JSON.stringify({ checked: ch, custom: ci })) } catch {} // eslint-disable-line no-empty
-  }
+  const persist = (ch, ci) => setChecklistData({ checked: ch, custom: ci })
 
   const toggle = (item) => {
     const next = { ...checked, [item]: !checked[item] }
-    setChecked(next); persist(next, customItems)
+    persist(next, customItems)
   }
 
   const addItem = () => {
     const t = newItem.trim(); if (!t) return
-    const next = [...customItems, t]
-    setCustomItems(next); setNewItem(''); persist(checked, next)
+    persist(checked, [...customItems, t])
+    setNewItem('')
   }
 
   const removeCustom = (item) => {
-    const next = customItems.filter(i => i !== item)
-    setCustomItems(next); persist(checked, next)
+    persist(checked, customItems.filter(i => i !== item))
   }
 
-  const reset = () => { setChecked({}); persist({}, customItems) }
+  const reset = () => persist({}, customItems)
 
   const allItems = [...Object.values(allCategories).flat(), ...customItems]
   const doneCount = allItems.filter(i => checked[i]).length

@@ -1,14 +1,21 @@
 import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { CalendarDays, ChevronDown, ChevronUp, Clock, Plane, CheckCircle2, Circle } from 'lucide-react'
+import { useLocalStorage } from '@/hooks'
 
 export default function TripTimeline({ trip }) {
-  const [expanded,    setExpanded]    = useState(false)
-  const [startDate,   setStartDate]   = useState('')
-  const [checkedDays, setCheckedDays] = useState({})
+  const [expanded, setExpanded] = useState(false)
 
   const itinerary = trip?.tripData?.tripData?.itinerary || []
   const days      = Number(trip?.userSelection?.noOfDays || itinerary.length || 0)
+  const tripKey   = `timeline-${trip?.id || 'default'}`
+
+  const [timelineData, setTimelineData] = useLocalStorage(tripKey, { startDate: '', checkedDays: {} })
+  const startDate   = timelineData.startDate   || ''
+  const checkedDays = timelineData.checkedDays || {}
+
+  const setStartDate   = (v) => setTimelineData(d => ({ ...d, startDate: v }))
+  const toggleDay      = (i) => setTimelineData(d => ({ ...d, checkedDays: { ...d.checkedDays, [i]: !d.checkedDays?.[i] } }))
 
   // Compute countdown
   const today = new Date(); today.setHours(0,0,0,0)
@@ -16,7 +23,6 @@ export default function TripTimeline({ trip }) {
   const daysUntil = start ? Math.ceil((start - today) / 86400000) : null
   const tripEnd   = start ? new Date(start.getTime() + (days - 1) * 86400000) : null
 
-  const toggleDay = (i) => setCheckedDays(prev => ({ ...prev, [i]: !prev[i] }))
   const doneCount = Object.values(checkedDays).filter(Boolean).length
 
   return (

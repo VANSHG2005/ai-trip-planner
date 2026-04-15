@@ -1,134 +1,111 @@
-import {React, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
-import { getUnsplashPhoto } from '@/service/GlobalApi'; 
-import { Calendar, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { getCoverPhotoUrl } from '@/service/GlobalApi'
+import { Calendar, Trash2, Users } from 'lucide-react'
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { Button } from '@/components/ui/button';
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
+  AlertDialogTitle, AlertDialogTrigger,
+} from '@/components/ui/alert-dialog'
+import { Button } from '@/components/ui/button'
 
-function UserTripCard({ trip, onDelete }) {
-  const [photoUrl, setPhotoUrl] = useState('/placeholder.jpg');
-  const [imageLoading, setImageLoading] = useState(true);
-  const navigate = useNavigate(); 
+export default function UserTripCard({ trip, onDelete, isShared = false }) {
+  const [photoUrl,     setPhotoUrl]     = useState(null)
+  const [imageLoading, setImageLoading] = useState(true)
+  const navigate = useNavigate()
 
   useEffect(() => {
-    if (trip) {
-      if (trip.tripCoverImageUrl) {
-        setPhotoUrl(trip.tripCoverImageUrl);
-        setImageLoading(false);
-      } else {
-        fetchPhotoFromApi();
-      }
-    }
-  }, [trip]);
+    if (!trip) return
+    const formatted = trip.userSelection?.location?.properties?.formatted
+    if (!formatted) { setImageLoading(false); return }
 
-  const fetchPhotoFromApi = async () => {
-    setImageLoading(true);
-    try {
-      const query = trip?.userSelection?.location?.properties.formatted;
-      if (!query) {
-        setPhotoUrl('/placeholder.jpg');
-        return;
-      }
-      const response = await getUnsplashPhoto(query);
-      const imageUrl = response.data?.results[0]?.urls?.regular;
-      setPhotoUrl(imageUrl || '/placeholder.jpg');
-    } catch (error) {
-      console.error("Failed to fetch image from Unsplash:", error);
-      setPhotoUrl('/placeholder.jpg');
-    } finally {
-        setImageLoading(false);
-    }
-  };
-  
- 
-  const handleNavigate = () => {
-    navigate('/view-trip/' + trip.id);
-  };
+    getCoverPhotoUrl(formatted)
+      .then(url => setPhotoUrl(url))
+      .catch(() => {})
+      .finally(() => setImageLoading(false))
+  }, [trip])
 
-  const handleDeleteContainerClick = (e) => {
-    e.stopPropagation();
-  };
+  const handleNavigate = () => navigate('/view-trip/' + trip.id)
 
-  const handleConfirmDelete = () => {
-    onDelete();
-  };
+  const location   = trip.userSelection?.location?.properties?.formatted
+  const budget     = trip.userSelection?.budget
+  const noOfDays   = trip.userSelection?.noOfDays
+  const traveler   = trip.userSelection?.traveler
 
   return (
-    <div 
-      className="group relative overflow-hidden rounded-xl shadow-lg h-[280px] cursor-pointer transition-all duration-300 hover:shadow-2xl"
-      onClick={handleNavigate} 
-    >
-      {imageLoading && (
-          <div className="absolute inset-0 bg-slate-200 animate-pulse"></div>
+    <div
+      className="group relative overflow-hidden rounded-2xl shadow-lg h-[280px] cursor-pointer transition-all duration-300 hover:shadow-2xl hover:-translate-y-1"
+      onClick={handleNavigate}>
+
+      {/* Loading shimmer */}
+      {imageLoading && <div className="absolute inset-0 bg-slate-200 dark:bg-slate-700 animate-pulse" />}
+
+      {/* Cover image */}
+      {photoUrl && (
+        <img
+          src={photoUrl}
+          className="w-full h-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-110"
+          alt={location}
+          onLoad={() => setImageLoading(false)}
+          style={{ opacity: imageLoading ? 0 : 1, transition: 'opacity 0.5s' }}
+        />
       )}
-      
-      <img 
-        src={photoUrl} 
-        className="w-full h-full object-cover transition-transform duration-500 ease-in-out group-hover:scale-110" 
-        alt={`A scenic view of ${trip?.userSelection?.location?.properties.formatted}`}
-        onLoad={() => setImageLoading(false)}
-        style={{ opacity: imageLoading ? 0 : 1, transition: 'opacity 0.5s' }}
-      />
-      
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
 
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+      {/* Bottom info */}
       <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-        <h2 className="text-lg font-bold truncate">
-          {trip.userSelection?.location?.properties?.formatted}
+        <h2 className="text-lg font-bold truncate" style={{ fontFamily: 'Sora, sans-serif' }}>
+          {location}
         </h2>
-        <p className="text-sm text-gray-300 mt-1">
-          💰 Budget: {trip.userSelection?.budget}
-        </p>
+        <div className="flex items-center gap-2 mt-1 flex-wrap">
+          <p className="text-xs text-gray-300">💰 {budget}</p>
+          {traveler && <p className="text-xs text-gray-300">· 👥 {traveler}</p>}
+        </div>
       </div>
 
-      <div className="absolute top-3 right-3 flex items-center gap-2 rounded-full bg-black/50 px-3 py-1 text-white text-xs backdrop-blur-sm">
+      {/* Days badge */}
+      <div className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-black/50 px-3 py-1 text-white text-xs backdrop-blur-sm">
         <Calendar className="h-3 w-3" />
-        {trip.userSelection?.noOfDays} Days
+        {noOfDays} Days
       </div>
-      
-      <div 
-        className="absolute top-2 left-2 z-10" 
-        onClick={handleDeleteContainerClick}
-      >
-        <AlertDialog>
-          <AlertDialogTrigger asChild>
-            <Button 
-              variant="destructive" 
-              size="icon"
-              className="h-8 w-8 rounded-full bg-red-600/80 hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent> 
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete your trip to 
-                <span className="font-semibold"> {trip.userSelection?.location?.properties?.formatted}</span>.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">
-                Yes, delete it
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-    </div>
-  );
-}
 
-export default UserTripCard;
+      {/* Shared badge */}
+      {isShared && (
+        <div className="absolute top-3 left-3 flex items-center gap-1 rounded-full bg-primary/80 px-2.5 py-1 text-white text-xs backdrop-blur-sm">
+          <Users className="h-3 w-3" /> Shared
+        </div>
+      )}
+
+      {/* Delete button — only for owned trips */}
+      {!isShared && onDelete && (
+        <div className="absolute top-2 left-2 z-10" onClick={e => e.stopPropagation()}>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive" size="icon"
+                className="h-8 w-8 rounded-full bg-red-600/80 hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete this trip?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete your trip to <strong>{location}</strong>. This cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={onDelete} className="bg-red-600 hover:bg-red-700">
+                  Yes, delete it
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
+    </div>
+  )
+}

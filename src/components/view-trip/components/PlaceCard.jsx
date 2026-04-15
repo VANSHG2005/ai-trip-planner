@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { getPhotoUrl } from '@/service/GlobalApi'
 import { Clock, Ticket, ExternalLink, ChevronDown, ChevronUp, Utensils, Camera, MapPin, TreePine, Waves } from 'lucide-react'
+import { useCurrency } from '@/context/CurrencyContext'
 
 const detectCat = (name = '', details = '') => {
   const t = (name + ' ' + details).toLowerCase()
@@ -37,6 +38,7 @@ function PlaceCard({ place, globalIndex = 0 }) {
   const [loaded,   setLoaded]   = useState(false)
   const [imgError, setImgError] = useState(false)
   const [expanded, setExpanded] = useState(false)
+  const { formatPrice } = useCurrency()
 
   const cat   = detectCat(place.placeName, place.placeDetails)
   const style = STYLES[cat] || STYLES.attraction
@@ -59,6 +61,9 @@ function PlaceCard({ place, globalIndex = 0 }) {
   }, [place.placeName, globalIndex])
 
   const isFree = (place.ticketPricing || '').toLowerCase().includes('free')
+  const ticketDisplay = place.ticketPricing
+    ? isFree ? place.ticketPricing : formatPrice(place.ticketPricing)
+    : ''
 
   return (
     <div className="card-premium overflow-hidden group hover:shadow-lg transition-all duration-300">
@@ -114,9 +119,9 @@ function PlaceCard({ place, globalIndex = 0 }) {
                 <Clock className="w-3 h-3 text-primary shrink-0" />{place.timeSpent}
               </span>
             )}
-            {place.ticketPricing && (
+            {ticketDisplay && (
               <span className={`flex items-center gap-1 text-xs font-medium ${isFree ? 'text-emerald-600 dark:text-emerald-400' : 'text-muted-foreground'}`}>
-                <Ticket className="w-3 h-3 text-primary shrink-0" />{place.ticketPricing}
+                <Ticket className="w-3 h-3 text-primary shrink-0" />{ticketDisplay}
               </span>
             )}
           </div>

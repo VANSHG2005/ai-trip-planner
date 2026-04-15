@@ -4,6 +4,7 @@ import { Receipt, Plus, Trash2, ChevronDown, ChevronUp, ArrowRight, Check, UserP
 import { db, auth } from '@/service/firebaseConfig'
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore'
 import { toast } from 'sonner'
+import { useCurrency } from '@/context/CurrencyContext'
 
 const CATS = [
   { id: 'food',       label: 'Food & Dining',  icon: '🍽️' },
@@ -41,6 +42,7 @@ function greedySettle(members, expenses) {
 }
 
 export default function TripExpenses({ tripId }) {
+  const { formatAmount } = useCurrency()
   const [expanded, setExpanded] = useState(false)
   const [expenses, setExpenses] = useState([])
   const [members,  setMembers]  = useState([])
@@ -58,7 +60,11 @@ export default function TripExpenses({ tripId }) {
 
   const docRef = tripId ? doc(db, 'TripExpenses', tripId) : null
 
-  // Initialize "Me" from auth user
+  // fmt uses CurrencyContext — expenses stored in USD, displayed in selected currency
+  const fmt = n => {
+    try { return formatAmount(n) } catch { return `$${Math.round(n).toLocaleString()}` }
+  }
+
   useEffect(() => {
     const user = auth.currentUser
     if (user && members.length === 0) {
@@ -66,7 +72,6 @@ export default function TripExpenses({ tripId }) {
     }
   }, []) // eslint-disable-line
 
-  // Load once when opened — NOT onSnapshot (that caused infinite spinner)
   useEffect(() => {
     if (!expanded || !docRef || loaded) return
     setLoading(true)
@@ -143,9 +148,6 @@ export default function TripExpenses({ tripId }) {
     await persist({ mem: upd })
   }
 
-  // NOTE: "Invite editor" stores their email in Firestore.
-  // The person needs to OPEN THE SAME TRIP URL to see the expenses.
-  // No email is actually sent — this is a UI/UX note.
   const inviteEditor = async () => {
     const email = inviteEmail.trim().toLowerCase()
     if (!email.includes('@')) { toast.error('Enter a valid email.'); return }
@@ -179,7 +181,6 @@ export default function TripExpenses({ tripId }) {
   const { balance, settlements } = greedySettle(members, expenses)
   const catTotals = {}
   expenses.forEach(e => { catTotals[e.category] = (catTotals[e.category] || 0) + e.amount })
-  const fmt = n => `$${Math.round(n).toLocaleString()}`
 
   return (
     <div className="card-premium overflow-hidden">
@@ -224,7 +225,6 @@ export default function TripExpenses({ tripId }) {
 
               {!loading && (
                 <>
-                  {/* Auth warning */}
                   {!auth.currentUser && (
                     <div className="mt-4 flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200">
                       <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
@@ -242,7 +242,6 @@ export default function TripExpenses({ tripId }) {
                       </button>
                     </div>
 
-                    {/* Invite form */}
                     <AnimatePresence>
                       {showInvite && (
                         <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
@@ -352,7 +351,7 @@ export default function TripExpenses({ tripId }) {
                               placeholder="Description *"
                               className="col-span-2 px-3 py-2.5 rounded-xl border border-border bg-card text-sm focus:outline-none focus:border-primary" />
                             <input value={form.amount} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))}
-                              type="number" min="0" step="0.01" placeholder="Amount ($) *"
+                              type="number" min="0" step="0.01" placeholder="Amount (USD) *"
                               className="px-3 py-2.5 rounded-xl border border-border bg-card text-sm focus:outline-none focus:border-primary" />
                             <select value={form.paidBy} onChange={e => setForm(f => ({ ...f, paidBy: e.target.value }))}
                               className="px-3 py-2.5 rounded-xl border border-border bg-card text-sm focus:outline-none focus:border-primary">

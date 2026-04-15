@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { getPhotoUrl } from '@/service/GlobalApi'
-import { Hotel, Star, MapPin, DollarSign } from 'lucide-react'
+import { Hotel, Star, MapPin } from 'lucide-react'
+import { useCurrency } from '@/context/CurrencyContext'
 
 // Extract just the city name from address
 const cityFromAddress = (addr = '') => {
@@ -33,6 +34,7 @@ function HotelCard({ hotel, index }) {
   const [photoUrl, setPhotoUrl] = useState(null)
   const [loaded,   setLoaded]   = useState(false)
   const [imgError, setImgError] = useState(false)
+  const { formatPrice, currency } = useCurrency()
 
   useEffect(() => {
     let cancelled = false
@@ -45,12 +47,14 @@ function HotelCard({ hotel, index }) {
     return () => { cancelled = true }
   }, [hotel.hotelName]) // eslint-disable-line
 
-  // Price: extract dollar amounts, convert £/€ display label
+  // Price: extract dollar amounts, convert to selected currency
   const rawPrice = hotel.price_range || hotel.price_per_night_usd || ''
-  const priceDisplay = rawPrice
-    .replace(/per night/gi, '')
-    .replace(/Starting from /gi, '')
-    .trim()
+  const priceDisplay = formatPrice(
+    rawPrice
+      .replace(/per night/gi, '')
+      .replace(/Starting from /gi, '')
+      .trim()
+  )
 
   const rating   = (hotel.rating || '').split('(')[0].trim()
   const name     = hotel.hotel_name || hotel.hotelName || 'Hotel'
@@ -94,7 +98,7 @@ function HotelCard({ hotel, index }) {
         <div className="flex items-center justify-between">
           {priceDisplay && (
             <div className="flex items-center gap-0.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-              <DollarSign className="w-3 h-3" />{priceDisplay}
+              <span className="text-xs">{currency.symbol}</span>{priceDisplay}
               <span className="text-muted-foreground font-normal">/night</span>
             </div>
           )}

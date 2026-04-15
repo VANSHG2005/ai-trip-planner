@@ -43,6 +43,7 @@ function WeatherWidget({ trip }) {
     }
   }, [lat, lon])
 
+  // Auto-load on mount
   useEffect(() => { load() }, [load])
 
   if (!lat || !lon) return null
@@ -54,7 +55,7 @@ function WeatherWidget({ trip }) {
 
   return (
     <div className="card-premium overflow-hidden">
-      {/* Header — NOT a button, just a div, to avoid nested button issues */}
+      {/* Header */}
       <div
         onClick={() => setExpanded(e => !e)}
         className="w-full flex items-center justify-between p-5 hover:bg-muted/30 transition-colors cursor-pointer select-none"
@@ -75,11 +76,10 @@ function WeatherWidget({ trip }) {
               <p className="text-xs text-muted-foreground">{display(current.temperature_2m)} · {cond?.label}</p>
             )}
             {!loading && error && <p className="text-xs text-red-500">{error}</p>}
-            {!loading && !current && !error && <p className="text-xs text-muted-foreground">Click to load weather</p>}
+            {!loading && !current && !error && <p className="text-xs text-muted-foreground">Click to expand</p>}
           </div>
         </div>
         <div className="flex items-center gap-2">
-          {/* Refresh — use a div with onClick that stops propagation */}
           <div
             role="button"
             tabIndex={0}
